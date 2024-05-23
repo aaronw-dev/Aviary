@@ -1,0 +1,1 @@
+dotnet build ./Aviary.csproj /property:GenerateFullPaths=true /consoleloggerparameters:NoSummary /p:Configuration=Debug /p:Platform="AnyCPU" 

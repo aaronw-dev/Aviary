@@ -79,7 +79,7 @@ namespace StandaloneExample
 			int windowWidth = 1280;
 			int windowHeight = 720;
 			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
-			Raylib.SetTargetFPS(120);
+			Raylib.SetTargetFPS(5000);
 
 			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName);
 			Console.WriteLine("Current airfoil: " + airfoilName);
@@ -99,17 +99,34 @@ namespace StandaloneExample
 				Raylib.DrawText("Current airfoil: " + airfoilName, 150, 10, 20, Raylib.RED);
 				Vector2 lastPoint = currentAirfoil[0];
 
-				Raylib.DrawLineEx(
-					new Vector2(
+				Vector2 chordStart = new Vector2(
 						windowWidth / 2 - airfoilScale / 2,
 						windowHeight / 2
-					),
+					);
+				Vector2 chordEnd = new Vector2(
+						windowWidth / 2 + airfoilScale / 2,
+						windowHeight / 2
+					);
+				Raylib.DrawLineEx(
+					chordStart,
+					chordEnd,
+					3,
+					new Color(100, 150, 255, 255)
+				);
+				Vector2 chordNormal = normal(
+					chordStart,
+					chordEnd
+				);
+				Raylib.DrawLineEx(
+					averageVector(
+					chordStart,
+					chordEnd),
 					new Vector2(
 						windowWidth / 2 + airfoilScale / 2,
 						windowHeight / 2
 					),
 					3,
-					new Color(100, 150, 255, 255)
+					Raylib.ORANGE
 				);
 
 				for (int i = 1; i < currentAirfoil.Count - 1; i++)
