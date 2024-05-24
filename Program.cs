@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Linq.Expressions;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using Raylib_CsLo;
 
@@ -6,16 +7,18 @@ namespace StandaloneExample
 {
 	public static class Program
 	{
-		public static List<Vector2> getAirfoil(string filepath, ref string airfoilName)
+		public static List<Vector2> getAirfoil(string filepath, ref string airfoilName, bool flipAirfoil = true)
 		{
 			var lines = File.ReadAllLines(filepath);
 			airfoilName = lines[0].Trim();
 			var points = new List<Vector2>();
-			for (var i = 1; i < lines.Length - 1; i += 1)
+			for (var i = 1; i < lines.Length; i += 1)
 			{
 				var line = lines[i];
 				line = line.Replace("      ", "  ");
 				string[] pointPosition;
+				if (line == "")
+					continue;
 				if (line.Trim().Contains(" -"))
 				{
 					pointPosition = line.Trim().Split(" ");
@@ -25,11 +28,12 @@ namespace StandaloneExample
 				else
 				{
 					pointPosition = line.Trim().Split("  ");
+					if (pointPosition.Length < 2)
+						pointPosition = line.Trim().Split(" ");
 					pointPosition[0] = pointPosition[0].Trim();
 					pointPosition[1] = pointPosition[1].Trim();
 				}
-				Vector2 pointVector = new Vector2(float.Parse(pointPosition[0]), float.Parse(pointPosition[1]));
-				//Console.WriteLine("|" + pointPosition[0] + "|" + pointPosition[1] + "|");
+				Vector2 pointVector = new Vector2(float.Parse(pointPosition[0]), float.Parse(pointPosition[1]) * (flipAirfoil ? -1 : 1));
 				points.Add(pointVector);
 			}
 			return points;
@@ -38,11 +42,15 @@ namespace StandaloneExample
 		{
 			return num > 0 ? num : -num;
 		}
-		public static Vector2 normal(Vector2 start, Vector2 end)
+		public static Vector2 perp(Vector2 v, bool flip = false, bool normalize = false)
+		{
+			return (normalize ? normalizeVector(new Vector2(v.Y, v.X)) : new Vector2(v.Y, v.X)) * (flip ? -1 : 1);
+		}
+		public static Vector2 normal(Vector2 start, Vector2 end, bool flipNormal = false)
 		{
 			float dx = end.X - start.X;
 			float dy = end.Y - start.Y;
-			Vector2 normal = normalizeVector(new Vector2(dx, dy));
+			Vector2 normal = normalizeVector(new Vector2(-dx, dy * (flipNormal ? -1 : 1)));
 			//Vector2 normal = new Vector2(dx, dy);
 			return normal;
 		}
@@ -52,22 +60,11 @@ namespace StandaloneExample
 		}
 		public static Vector2 normalizeVector(Vector2 vector)
 		{
-			Vector2 returnVector = Vector2.Zero;
-			bool negativex = vector.X < 0;
-
-			bool negativey = vector.Y < 0;
-
-			if (positive(vector.X) > positive(vector.Y))
-			{
-				returnVector.Y = vector.Y / vector.X;
-				returnVector.X = 1;
-			}
-			else if (positive(vector.X) < positive(vector.Y))
-			{
-				returnVector.X = vector.X / vector.Y;
-				returnVector.Y = 1;
-			}
-			return returnVector;
+			Vector2 a = vector;
+			float m = MathF.Sqrt(a.X * a.X + a.Y * a.Y);
+			a.X /= m;
+			a.Y /= m;
+			return a;
 		}
 
 		public static void Main(string[] args)
@@ -79,13 +76,17 @@ namespace StandaloneExample
 			int windowWidth = 1280;
 			int windowHeight = 720;
 			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
-			Raylib.SetTargetFPS(5000);
+			Raylib.SetTargetFPS(120);
 
-			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName);
+			bool flipAirfoil = true;
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/fauvel.dat", ref airfoilName,flipAirfoil);
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, flipAirfoil);
+			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, flipAirfoil);
 			Console.WriteLine("Current airfoil: " + airfoilName);
 
 			int triangleSize = 50;
 
+			Console.WriteLine(string.Join("\n", currentAirfoil));
 			while (!Raylib.WindowShouldClose()) // Detect window close button or ESC key
 			{
 				Raylib.BeginDrawing();
@@ -113,23 +114,7 @@ namespace StandaloneExample
 					3,
 					new Color(100, 150, 255, 255)
 				);
-				Vector2 chordNormal = normal(
-					chordStart,
-					chordEnd
-				);
-				Raylib.DrawLineEx(
-					averageVector(
-					chordStart,
-					chordEnd),
-					new Vector2(
-						windowWidth / 2 + airfoilScale / 2,
-						windowHeight / 2
-					),
-					3,
-					Raylib.ORANGE
-				);
-
-				for (int i = 1; i < currentAirfoil.Count - 1; i++)
+				for (int i = 0; i < currentAirfoil.Count; i++)
 				{
 					Vector2 currentPoint = currentAirfoil[i];
 					int lastPointX = (int)MathF.Round(lastPoint.X * airfoilScale);
@@ -152,23 +137,38 @@ namespace StandaloneExample
 					);
 					if (Raylib.IsKeyDown(KeyboardKey.KEY_SPACE))
 					{
-						Vector2 normalizedFace = normal(lastPoint * airfoilScale, currentPoint * airfoilScale) * 50;
-						Vector2 averageFace = averageVector(lastPoint * airfoilScale, currentPoint * airfoilScale);
-						//Console.WriteLine(normalizedFace);
-						Raylib.DrawLine(
-							windowWidth / 2 + (int)averageFace.X - airfoilScale / 2,
-							windowHeight / 2 + (int)averageFace.Y,
-							windowWidth / 2 + (int)averageFace.X + (int)-normalizedFace.X - airfoilScale / 2,
-							windowHeight / 2 + (int)averageFace.Y + (int)normalizedFace.Y,
-							Raylib.YELLOW
+						Vector2 lastPointScaled = lastPoint * airfoilScale;
+						Vector2 curPointScaled = currentPoint * airfoilScale;
+						Vector2 faceStart = new Vector2(windowWidth / 2 - airfoilScale / 2 + lastPointScaled.X, (windowHeight / 2) + lastPointScaled.Y);
+						Vector2 faceEnd = new Vector2(windowWidth / 2 - airfoilScale / 2 + curPointScaled.X, (windowHeight / 2) + curPointScaled.Y);
+						Raylib.DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED);
+						Raylib.DrawCircle((int)faceEnd.X, (int)faceEnd.Y, 4, Raylib.RED);
+						//bool toReverseNormal = curPointScaled.Y < 0;
+						Vector2 normalizedFace = perp(normal(faceStart, faceEnd) * 50, flipAirfoil);
+						Vector2 averageFace = averageVector(faceStart, faceEnd);
+						Raylib.DrawLineEx(
+							averageFace,
+							averageFace + normalizedFace,
+							2,
+							Raylib.PINK
 						);
 					}
 					lastPoint = currentPoint;
 				}
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_SPACE))
+				{
+					Vector2 chordNormal = perp(normal(chordStart, chordEnd) * 100, false);
+					Vector2 chordAverage = averageVector(chordStart, chordEnd);
+					Raylib.DrawLineEx(
+						chordAverage,
+						chordAverage + chordNormal,
+						3,
+						Raylib.ORANGE
+					);
+				}
 				Raylib.DrawFPS(10, 10);
 				//Raylib.DrawCircle((int)Raylib.GetMousePosition().X, (int)Raylib.GetMousePosition().Y, 10, Raylib.BROWN);
-				int mousePositionX = (int)Raylib.GetMousePosition().X;
-				int mousePositionY = (int)Raylib.GetMousePosition().Y;
+				airfoilScale += (int)Raylib.GetMouseWheelMoveV().Y * 50;
 				Raylib.EndDrawing();
 			}
 			Raylib.CloseWindow();
