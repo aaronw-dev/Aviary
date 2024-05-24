@@ -1,1 +1,9 @@
 .vscode
+obj
+bin/Debug/net6.0/runtimes
+bin/Debug/net6.0/Aviary.deps.json
+bin/Debug/net6.0/Aviary.dll
+bin/Debug/net6.0/Aviary.pdb
+bin/Debug/net6.0/Aviary.runtimeconfig.json
+bin/Debug/net6.0/Microsoft.Toolkit.HighPerformance.dll
+bin/Debug/net6.0/Raylib-CsLo.dll
