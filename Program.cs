@@ -33,7 +33,7 @@ namespace StandaloneExample
 					pointPosition[0] = pointPosition[0].Trim();
 					pointPosition[1] = pointPosition[1].Trim();
 				}
-				Vector2 pointVector = new Vector2(float.Parse(pointPosition[0]), float.Parse(pointPosition[1]) * (flipAirfoil ? -1 : 1));
+				Vector2 pointVector = new Vector2(float.Parse(pointPosition[0]) - 0.5f, float.Parse(pointPosition[1]) * (flipAirfoil ? -1 : 1));
 				points.Add(pointVector);
 			}
 			return points;
@@ -73,22 +73,31 @@ namespace StandaloneExample
 
 			int airfoilScale = 700;
 
+			int xOffset = 0;
+			int yOffset = 0;
+
 			int windowWidth = 1280;
 			int windowHeight = 720;
+
+			int homeX;
+			int homeY;
 			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
 			Raylib.SetTargetFPS(120);
 
 			bool flipAirfoil = true;
 			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/fauvel.dat", ref airfoilName,flipAirfoil);
-			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, flipAirfoil);
-			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, flipAirfoil);
+			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, flipAirfoil);
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, flipAirfoil);
 			Console.WriteLine("Current airfoil: " + airfoilName);
 
 			int triangleSize = 50;
 
-			Console.WriteLine(string.Join("\n", currentAirfoil));
-			while (!Raylib.WindowShouldClose()) // Detect window close button or ESC key
+			//Console.WriteLine(string.Join("\n", currentAirfoil));
+			while (!Raylib.WindowShouldClose())
 			{
+				float scale = airfoilScale / 700f;
+				homeX = windowWidth / 2 + xOffset;
+				homeY = windowHeight / 2 + yOffset;
 				Raylib.BeginDrawing();
 				Raylib.ClearBackground(new Color(2, 2, 2, 255));
 				Raylib.DrawTriangle(
@@ -101,12 +110,12 @@ namespace StandaloneExample
 				Vector2 lastPoint = currentAirfoil[0];
 
 				Vector2 chordStart = new Vector2(
-						windowWidth / 2 - airfoilScale / 2,
-						windowHeight / 2
+						windowWidth / 2 + xOffset - airfoilScale / 2,
+						windowHeight / 2 + yOffset
 					);
 				Vector2 chordEnd = new Vector2(
-						windowWidth / 2 + airfoilScale / 2,
-						windowHeight / 2
+						windowWidth / 2 + xOffset + airfoilScale / 2,
+						windowHeight / 2 + yOffset
 					);
 				Raylib.DrawLineEx(
 					chordStart,
@@ -125,12 +134,12 @@ namespace StandaloneExample
 
 					Raylib.DrawLineEx(
 						new Vector2(
-							windowWidth / 2 + lastPointX - airfoilScale / 2,
-							windowHeight / 2 + lastPointY
+							homeX + lastPointX,
+							homeY + lastPointY
 							),
 						new Vector2(
-							windowWidth / 2 + currentPointX - airfoilScale / 2,
-							windowHeight / 2 + currentPointY
+							homeX + currentPointX,
+							homeY + currentPointY
 						),
 						3,
 						Raylib.GREEN
@@ -139,8 +148,8 @@ namespace StandaloneExample
 					{
 						Vector2 lastPointScaled = lastPoint * airfoilScale;
 						Vector2 curPointScaled = currentPoint * airfoilScale;
-						Vector2 faceStart = new Vector2(windowWidth / 2 - airfoilScale / 2 + lastPointScaled.X, (windowHeight / 2) + lastPointScaled.Y);
-						Vector2 faceEnd = new Vector2(windowWidth / 2 - airfoilScale / 2 + curPointScaled.X, (windowHeight / 2) + curPointScaled.Y);
+						Vector2 faceStart = new Vector2(homeX + lastPointScaled.X, homeY + lastPointScaled.Y);
+						Vector2 faceEnd = new Vector2(homeX + curPointScaled.X, homeY + curPointScaled.Y);
 						Raylib.DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED);
 						Raylib.DrawCircle((int)faceEnd.X, (int)faceEnd.Y, 4, Raylib.RED);
 						//bool toReverseNormal = curPointScaled.Y < 0;
@@ -148,7 +157,7 @@ namespace StandaloneExample
 						Vector2 averageFace = averageVector(faceStart, faceEnd);
 						Raylib.DrawLineEx(
 							averageFace,
-							averageFace + normalizedFace,
+							averageFace + normalizedFace * scale,
 							2,
 							Raylib.PINK
 						);
@@ -161,7 +170,7 @@ namespace StandaloneExample
 					Vector2 chordAverage = averageVector(chordStart, chordEnd);
 					Raylib.DrawLineEx(
 						chordAverage,
-						chordAverage + chordNormal,
+						chordAverage + chordNormal * scale,
 						3,
 						Raylib.ORANGE
 					);
@@ -169,6 +178,13 @@ namespace StandaloneExample
 				Raylib.DrawFPS(10, 10);
 				//Raylib.DrawCircle((int)Raylib.GetMousePosition().X, (int)Raylib.GetMousePosition().Y, 10, Raylib.BROWN);
 				airfoilScale += (int)Raylib.GetMouseWheelMoveV().Y * 50;
+				airfoilScale = Math.Clamp(airfoilScale, 50, 2500);
+				if (Raylib.IsMouseButtonDown(MouseButton.MOUSE_BUTTON_LEFT))
+				{
+					Vector2 mouseDelta = Raylib.GetMouseDelta();
+					xOffset += (int)mouseDelta.X;
+					yOffset += (int)mouseDelta.Y;
+				}
 				Raylib.EndDrawing();
 			}
 			Raylib.CloseWindow();
