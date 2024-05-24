@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Aaron\\Aviary\\Aviary.csproj": {}
+    "c:\\Users\\Aaron\\Aviary\\Aviary.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Aaron\\Aviary\\Aviary.csproj": {
+    "c:\\Users\\Aaron\\Aviary\\Aviary.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Aaron\\Aviary\\Aviary.csproj",
+        "projectUniqueName": "c:\\Users\\Aaron\\Aviary\\Aviary.csproj",
         "projectName": "Aviary",
-        "projectPath": "C:\\Users\\Aaron\\Aviary\\Aviary.csproj",
+        "projectPath": "c:\\Users\\Aaron\\Aviary\\Aviary.csproj",
         "packagesPath": "C:\\Users\\Aaron\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Aaron\\Aviary\\obj\\",
+        "outputPath": "c:\\Users\\Aaron\\Aviary\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Aaron\\AppData\\Roaming\\NuGet\\NuGet.Config",
