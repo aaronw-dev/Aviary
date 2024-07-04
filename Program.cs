@@ -38,16 +38,19 @@ namespace StandaloneExample
 			}
 			return points;
 		}
+		public static float CelsiusToKelvin(float celsius)
+		{
+			return celsius + 273.15f;
+		}
 		public static float AirPressureAtAltitude(float celsius, float altitudeMeters)
 		{
-			const float g = 9.80665f;       // acceleration due to gravity, m/s^2
-			const float M = 0.0289644f;     // molar mass of Earth's air, kg/mol
-			const float R = 8.3144598f;     // universal gas constant, J/(mol*K)
-			const float T0 = 288.15f;       // standard temperature at sea level, K
-			const float P0 = 101325f;       // standard pressure at sea level, Pa
-			const float L = 0.0065f;        // temperature lapse rate, K/m
+			const float g = 9.80665f;               // acceleration due to gravity, m/s^2
+			const float M = 0.0289644f;             // molar mass of Earth's air, kg/mol
+			const float R = 8.3144598f;             // universal gas constant, J/(mol*K)
+			float T0 = CelsiusToKelvin(celsius);    // standard temperature at sea level, K
+			const float P0 = 101325f;               // standard pressure at sea level, Pa
+			const float L = 0.0065f;                // temperature lapse rate, K/m
 
-			float kelvin = celsius + 273.15f;
 
 			if (altitudeMeters > 11000)
 				throw new ArgumentOutOfRangeException("This formula is valid only up to 11,000 meters altitude.");
@@ -55,8 +58,19 @@ namespace StandaloneExample
 			float T = T0 - (L * altitudeMeters);
 
 			// In pascals
-			float pressurePascals = P0 * MathF.Pow(T / T0, (g * M) / (R * L));
+			float pressurePascals = P0 * MathF.Pow(T / T0, g * M / (R * L));
 			return pressurePascals;
+		}
+		public static float AirDensity(float temperature, float pressure)
+		{
+			const float R = 287.05f;
+			float kelvin = CelsiusToKelvin(temperature);
+			return pressure / (R * kelvin);
+		}
+		public static float DynamicAirPressure(float density, float airSpeed, float temperature)
+		{
+			// we use the formula q = ½pv²
+			return 0.5f * density * (float)Math.Pow(airSpeed, 2);
 		}
 		public static float positive(float num)
 		{
@@ -110,17 +124,22 @@ namespace StandaloneExample
 
 			float airSpeed = 0;
 			float wingWidth = 6;
-			float wingTopArea = 0;
-			float wingBottomArea = 0;
-			float wingArea = 0;
+			float wingTopArea;
+			float wingBottomArea;
+			float wingArea;
 
-			float wingTopLength = 0;
-			float wingBottomLength = 0;
+			float wingTopLength;
+			float wingBottomLength;
 
-			float staticAirPressure = AirPressureAtAltitude(15, 500);
+			float airTemperature = 15;
+			float altitude = 500;
 
-			Vector3 drag = Vector3.Zero;
-			Vector3 lift = Vector3.Zero;
+			float staticAirPressure;
+			float airDensity;
+			float dynamicAirPressure;
+
+			Vector3 drag;
+			Vector3 lift;
 
 			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
 			Raylib.SetTargetFPS(120);
@@ -139,9 +158,15 @@ namespace StandaloneExample
 			{
 				wingTopLength = 0;
 				wingBottomLength = 0;
+
 				float scale = zoom / 140f;
 				homeX = windowWidth / 2 + xOffset;
 				homeY = windowHeight / 2 + yOffset;
+
+				staticAirPressure = AirPressureAtAltitude(airTemperature, altitude);
+				airDensity = AirDensity(airTemperature, staticAirPressure);
+				dynamicAirPressure = DynamicAirPressure(airDensity, airSpeed, airTemperature);
+
 				Raylib.BeginDrawing();
 				Raylib.ClearBackground(new Color(2, 2, 2, 255));
 				Raylib.DrawTriangle(
@@ -236,7 +261,9 @@ namespace StandaloneExample
 				List<string> stats = new List<string>
 				{
 					"Airspeed (m/s): " + airSpeed,
-					"Air pressure (Pa): " + staticAirPressure,
+					"Static air pressure (Pa): " + staticAirPressure,
+					"Air Density (kg/m³): " + airDensity,
+					"Dynamic air pressure (Pa): " + dynamicAirPressure,
 					"Wing width (m): " + wingWidth,
 					"Wing top length (m): " + wingTopLength,
 					"Wing bottom length (m): " + wingBottomLength,
