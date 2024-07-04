@@ -38,6 +38,26 @@ namespace StandaloneExample
 			}
 			return points;
 		}
+		public static float AirPressureAtAltitude(float celsius, float altitudeMeters)
+		{
+			const float g = 9.80665f;       // acceleration due to gravity, m/s^2
+			const float M = 0.0289644f;     // molar mass of Earth's air, kg/mol
+			const float R = 8.3144598f;     // universal gas constant, J/(mol*K)
+			const float T0 = 288.15f;       // standard temperature at sea level, K
+			const float P0 = 101325f;       // standard pressure at sea level, Pa
+			const float L = 0.0065f;        // temperature lapse rate, K/m
+
+			float kelvin = celsius + 273.15f;
+
+			if (altitudeMeters > 11000)
+				throw new ArgumentOutOfRangeException("This formula is valid only up to 11,000 meters altitude.");
+
+			float T = T0 - (L * altitudeMeters);
+
+			// In pascals
+			float pressurePascals = P0 * MathF.Pow(T / T0, (g * M) / (R * L));
+			return pressurePascals;
+		}
 		public static float positive(float num)
 		{
 			return num > 0 ? num : -num;
@@ -75,7 +95,7 @@ namespace StandaloneExample
 		{
 			string airfoilName = "";
 
-			int zoom = 140;
+			int zoom = 800;
 
 			int airfoilScale = 1;
 
@@ -96,6 +116,8 @@ namespace StandaloneExample
 
 			float wingTopLength = 0;
 			float wingBottomLength = 0;
+
+			float staticAirPressure = AirPressureAtAltitude(15, 500);
 
 			Vector3 drag = Vector3.Zero;
 			Vector3 lift = Vector3.Zero;
@@ -175,7 +197,7 @@ namespace StandaloneExample
 						Raylib.DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED);
 						Raylib.DrawCircle((int)faceEnd.X, (int)faceEnd.Y, 4, Raylib.RED);
 						//bool toReverseNormal = curPointScaled.Y < 0;
-						Vector2 normalizedFace = perp(normal(faceStart, faceEnd) * 50, flipAirfoil);
+						Vector2 normalizedFace = perp(normal(faceStart, faceEnd) * 10, flipAirfoil);
 						Vector2 averageFace = averageVector(faceStart, faceEnd);
 						Raylib.DrawLineEx(
 							averageFace,
@@ -211,16 +233,24 @@ namespace StandaloneExample
 					airSpeed--;
 				}
 				Raylib.DrawFPS(10, 10);
-				Raylib.DrawText("Airspeed (m/s): " + airSpeed, 10, 40, 20, Raylib.YELLOW);
-				Raylib.DrawText("Wing width (m): " + wingWidth, 10, 60, 20, Raylib.YELLOW);
-				Raylib.DrawText("Wing top length (m): " + wingTopLength, 10, 80, 20, Raylib.YELLOW);
-				Raylib.DrawText("Wing bottom length (m): " + wingBottomLength, 10, 100, 20, Raylib.YELLOW);
-				Raylib.DrawText("Wing top area (m²): " + wingTopArea, 10, 120, 20, Raylib.YELLOW);
-				Raylib.DrawText("Wing bottom area (m²): " + wingBottomArea, 10, 140, 20, Raylib.YELLOW);
-				Raylib.DrawText("Wing total area (m²): " + wingArea, 10, 160, 20, Raylib.YELLOW);
+				List<string> stats = new List<string>
+				{
+					"Airspeed (m/s): " + airSpeed,
+					"Air pressure (Pa): " + staticAirPressure,
+					"Wing width (m): " + wingWidth,
+					"Wing top length (m): " + wingTopLength,
+					"Wing bottom length (m): " + wingBottomLength,
+					"Wing top area (m²): " + wingTopArea,
+					"Wing bottom area (m²): " + wingBottomArea,
+					"Wing total area (m²): " + wingArea
+				};
+				for (int i = 0; i < stats.Count; i++)
+				{
+					Raylib.DrawText(stats[i], 10, (i * 20) + 40, 20, Raylib.YELLOW);
+				}
 				//Raylib.DrawCircle((int)Raylib.GetMousePosition().X, (int)Raylib.GetMousePosition().Y, 10, Raylib.BROWN);
 				zoom += (int)Raylib.GetMouseWheelMoveV().Y * 50;
-				zoom = Math.Clamp(zoom, 10, 1000);
+				zoom = Math.Clamp(zoom, 150, 3000);
 				if (Raylib.IsMouseButtonDown(MouseButton.MOUSE_BUTTON_LEFT))
 				{
 					Vector2 mouseDelta = Raylib.GetMouseDelta();
