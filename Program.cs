@@ -54,6 +54,10 @@ namespace StandaloneExample
 			//Vector2 normal = new Vector2(dx, dy);
 			return normal;
 		}
+		public static float distance(Vector2 v1, Vector2 v2)
+		{
+			return (float)Math.Sqrt(Math.Pow(v1.X + v2.X, 2) + Math.Pow(v1.Y + v2.Y, 2));
+		}
 		public static Vector2 averageVector(Vector2 v1, Vector2 v2)
 		{
 			return new Vector2((v1.X + v2.X) / 2, (v1.Y + v2.Y) / 2);
@@ -71,7 +75,9 @@ namespace StandaloneExample
 		{
 			string airfoilName = "";
 
-			int airfoilScale = 700;
+			int zoom = 140;
+
+			int airfoilScale = 1;
 
 			int xOffset = 0;
 			int yOffset = 0;
@@ -81,6 +87,15 @@ namespace StandaloneExample
 
 			int homeX;
 			int homeY;
+
+			float airSpeed = 0;
+			float wingWidth = 6;
+			float wingTopArea = 0;
+			float wingBottomArea = 0;
+			float wingArea = 0;
+
+			float wingTopLength = 0;
+			float wingBottomLength = 0;
 
 			Vector3 drag = Vector3.Zero;
 			Vector3 lift = Vector3.Zero;
@@ -100,7 +115,9 @@ namespace StandaloneExample
 			//Console.WriteLine(string.Join("\n", currentAirfoil));
 			while (!Raylib.WindowShouldClose())
 			{
-				float scale = airfoilScale / 700f;
+				wingTopLength = 0;
+				wingBottomLength = 0;
+				float scale = zoom / 140f;
 				homeX = windowWidth / 2 + xOffset;
 				homeY = windowHeight / 2 + yOffset;
 				Raylib.BeginDrawing();
@@ -115,11 +132,11 @@ namespace StandaloneExample
 				Vector2 lastPoint = currentAirfoil[0];
 
 				Vector2 chordStart = new Vector2(
-						windowWidth / 2 + xOffset - airfoilScale / 2,
+						windowWidth / 2 + xOffset - zoom / 2 * airfoilScale,
 						windowHeight / 2 + yOffset
 					);
 				Vector2 chordEnd = new Vector2(
-						windowWidth / 2 + xOffset + airfoilScale / 2,
+						windowWidth / 2 + xOffset + zoom / 2 * airfoilScale,
 						windowHeight / 2 + yOffset
 					);
 				Raylib.DrawLineEx(
@@ -131,28 +148,28 @@ namespace StandaloneExample
 				for (int i = 0; i < currentAirfoil.Count; i++)
 				{
 					Vector2 currentPoint = currentAirfoil[i];
-					int lastPointX = (int)MathF.Round(lastPoint.X * airfoilScale);
-					int lastPointY = (int)MathF.Round(lastPoint.Y * airfoilScale);
+					bool isOnBottom = currentPoint.Y < 0 || lastPoint.Y < 0;
+					if (isOnBottom)
+						wingBottomLength += distance(lastPoint, currentPoint) * airfoilScale;
+					else
+						wingTopLength += distance(lastPoint, currentPoint) * airfoilScale;
 
-					int currentPointX = (int)MathF.Round(currentPoint.X * airfoilScale);
-					int currentPointY = (int)MathF.Round(currentPoint.Y * airfoilScale);
-
+					Vector2 lastPointScaled = lastPoint * airfoilScale * zoom;
+					Vector2 curPointScaled = currentPoint * airfoilScale * zoom;
 					Raylib.DrawLineEx(
 						new Vector2(
-							homeX + lastPointX,
-							homeY + lastPointY
-							),
+							homeX + lastPointScaled.X,
+							homeY + lastPointScaled.Y
+						),
 						new Vector2(
-							homeX + currentPointX,
-							homeY + currentPointY
+							homeX + curPointScaled.X,
+							homeY + curPointScaled.Y
 						),
 						3,
 						Raylib.GREEN
 					);
 					if (Raylib.IsKeyDown(KeyboardKey.KEY_SPACE))
 					{
-						Vector2 lastPointScaled = lastPoint * airfoilScale;
-						Vector2 curPointScaled = currentPoint * airfoilScale;
 						Vector2 faceStart = new Vector2(homeX + lastPointScaled.X, homeY + lastPointScaled.Y);
 						Vector2 faceEnd = new Vector2(homeX + curPointScaled.X, homeY + curPointScaled.Y);
 						Raylib.DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED);
@@ -164,11 +181,16 @@ namespace StandaloneExample
 							averageFace,
 							averageFace + normalizedFace * scale,
 							2,
-							Raylib.PINK
+							isOnBottom ? Raylib.PINK : Raylib.ORANGE
 						);
 					}
 					lastPoint = currentPoint;
 				}
+
+				wingTopArea = wingTopLength * wingWidth;
+				wingBottomArea = wingBottomLength * wingWidth;
+				wingArea = wingTopArea + wingBottomArea;
+
 				if (Raylib.IsKeyDown(KeyboardKey.KEY_SPACE))
 				{
 					Vector2 chordNormal = perp(normal(chordStart, chordEnd) * 100, false);
@@ -180,10 +202,25 @@ namespace StandaloneExample
 						Raylib.ORANGE
 					);
 				}
+				if (Raylib.IsKeyPressed(KeyboardKey.KEY_UP))
+				{
+					airSpeed++;
+				}
+				if (Raylib.IsKeyPressed(KeyboardKey.KEY_DOWN))
+				{
+					airSpeed--;
+				}
 				Raylib.DrawFPS(10, 10);
+				Raylib.DrawText("Airspeed (m/s): " + airSpeed, 10, 40, 20, Raylib.YELLOW);
+				Raylib.DrawText("Wing width (m): " + wingWidth, 10, 60, 20, Raylib.YELLOW);
+				Raylib.DrawText("Wing top length (m): " + wingTopLength, 10, 80, 20, Raylib.YELLOW);
+				Raylib.DrawText("Wing bottom length (m): " + wingBottomLength, 10, 100, 20, Raylib.YELLOW);
+				Raylib.DrawText("Wing top area (m²): " + wingTopArea, 10, 120, 20, Raylib.YELLOW);
+				Raylib.DrawText("Wing bottom area (m²): " + wingBottomArea, 10, 140, 20, Raylib.YELLOW);
+				Raylib.DrawText("Wing total area (m²): " + wingArea, 10, 160, 20, Raylib.YELLOW);
 				//Raylib.DrawCircle((int)Raylib.GetMousePosition().X, (int)Raylib.GetMousePosition().Y, 10, Raylib.BROWN);
-				airfoilScale += (int)Raylib.GetMouseWheelMoveV().Y * 50;
-				airfoilScale = Math.Clamp(airfoilScale, 50, 2500);
+				zoom += (int)Raylib.GetMouseWheelMoveV().Y * 50;
+				zoom = Math.Clamp(zoom, 10, 1000);
 				if (Raylib.IsMouseButtonDown(MouseButton.MOUSE_BUTTON_LEFT))
 				{
 					Vector2 mouseDelta = Raylib.GetMouseDelta();

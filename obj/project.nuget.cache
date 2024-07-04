@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "g6SNMX5XY+wmtAFmVagVnNf19iuGONg1ek/0aEuP353Tp6Qaou6/W42tsggh/YYSTLcITMQNJKNMHXuGtMn7Hg==",
+  "dgSpecHash": "4omFQvbCvMpWK5tmafaRWetNQJueH9BV22zDVKwnOA8Hunutfa5GfbhvdikSm5G9eYxA75dGXt4NDsCl7CxhgA==",
   "success": true,
-  "projectFilePath": "C:\\Users\\Aaron\\Aviary\\Aviary.csproj",
+  "projectFilePath": "c:\\Users\\Aaron\\Aviary\\Aviary.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Aaron\\.nuget\\packages\\microsoft.toolkit.highperformance\\7.1.2\\microsoft.toolkit.highperformance.7.1.2.nupkg.sha512",
     "C:\\Users\\Aaron\\.nuget\\packages\\raylib-cslo\\4.2.0.9\\raylib-cslo.4.2.0.9.nupkg.sha512",
