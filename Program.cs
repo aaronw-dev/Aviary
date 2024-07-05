@@ -104,7 +104,6 @@ namespace StandaloneExample
 			a.Y /= m;
 			return a;
 		}
-
 		public static void Main(string[] args)
 		{
 			string airfoilName = "";
@@ -138,6 +137,7 @@ namespace StandaloneExample
 			float airDensity;
 			float dynamicAirPressure;
 
+			float simTime = 0;
 			Vector3 drag;
 			Vector3 lift;
 
@@ -154,6 +154,9 @@ namespace StandaloneExample
 			int triangleSize = 50;
 
 			//Console.WriteLine(string.Join("\n", currentAirfoil));
+
+			int gridSizeX = 25;
+			int gridSizeY = 25;
 			while (!Raylib.WindowShouldClose())
 			{
 				wingTopLength = 0;
@@ -197,9 +200,9 @@ namespace StandaloneExample
 					Vector2 currentPoint = currentAirfoil[i];
 					bool isOnBottom = currentPoint.Y < 0 || lastPoint.Y < 0;
 					if (isOnBottom)
-						wingBottomLength += distance(lastPoint, currentPoint) * airfoilScale;
+						wingBottomLength += distance(lastPoint * airfoilScale, currentPoint * airfoilScale);
 					else
-						wingTopLength += distance(lastPoint, currentPoint) * airfoilScale;
+						wingTopLength += distance(lastPoint * airfoilScale, currentPoint * airfoilScale);
 
 					Vector2 lastPointScaled = lastPoint * airfoilScale * zoom;
 					Vector2 curPointScaled = currentPoint * airfoilScale * zoom;
@@ -260,6 +263,7 @@ namespace StandaloneExample
 				Raylib.DrawFPS(10, 10);
 				List<string> stats = new List<string>
 				{
+					"Simulation time (ms): " + MathF.Round(simTime),
 					"Airspeed (m/s): " + airSpeed,
 					"Static air pressure (Pa): " + staticAirPressure,
 					"Air Density (kg/m³): " + airDensity,
@@ -285,6 +289,18 @@ namespace StandaloneExample
 					yOffset += (int)mouseDelta.Y;
 				}
 				Raylib.EndDrawing();
+				simTime += Raylib.GetFrameTime() * 1000;
+
+				int brightness = 25;
+				float placeholderScale = 1;
+				for (float xPosition = xOffset % (gridSizeX * placeholderScale); xPosition < windowWidth; xPosition += gridSizeX * placeholderScale)
+				{
+					Raylib.DrawLine((int)xPosition, 0, (int)xPosition, windowHeight, new Color(brightness, brightness, brightness, 255));
+				}
+				for (float yPosition = yOffset % (gridSizeY * placeholderScale); yPosition < windowWidth; yPosition += gridSizeY * placeholderScale)
+				{
+					Raylib.DrawLine(0, (int)yPosition, windowWidth, (int)yPosition, new Color(brightness, brightness, brightness, 255));
+				}
 			}
 			Raylib.CloseWindow();
 		}
