@@ -38,6 +38,15 @@ namespace StandaloneExample
 			}
 			return points;
 		}
+		public static void DrawRing(float x, float y, float radius, float thickness, Color color, float opacity, float startAngle = 0, float endAngle = 360, int segments = 6)
+		{
+			Raylib.DrawRing(new Vector2(x, y), radius - thickness, radius, startAngle + 180, endAngle + 180, segments, Raylib.Fade(color, opacity));
+		}
+		public static void DrawCircle(float x, float y, float radius, Color color, float opacity, float startAngle = 0, float endAngle = 360, int segments = 6)
+		{
+			Raylib.DrawCircleV(new Vector2(x, y), radius, Raylib.Fade(color, opacity));
+
+		}
 		public static float CelsiusToKelvin(float celsius)
 		{
 			return celsius + 273.15f;
@@ -263,8 +272,9 @@ namespace StandaloneExample
 					{
 						Vector2 faceStart = new Vector2(lastPointScaled.X, lastPointScaled.Y);
 						Vector2 faceEnd = new Vector2(curPointScaled.X, curPointScaled.Y);
-						Raylib.DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED);
-						Raylib.DrawRing(new Vector2((int)faceStart.X, (int)faceStart.Y), 9, 10, 180, 0, 128, Raylib.Fade(Raylib.MAROON, 1f));
+						DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED, 1f);
+						//Raylib.DrawRing(new Vector2((int)faceStart.X, (int)faceStart.Y), 9, 10, 180, 0, 128, Raylib.Fade(Raylib.MAROON, 1f));
+						DrawRing(faceStart.X, faceStart.Y, 10, 2, Raylib.PURPLE, 0.5f, segments: 64);
 						//bool toReverseNormal = curPointScaled.Y < 0;
 						Vector2 normalizedFace = perp(normal(faceStart, faceEnd) * 10, flipAirfoil);
 						Vector2 averageFace = averageVector(faceStart, faceEnd);
