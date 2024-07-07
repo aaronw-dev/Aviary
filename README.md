@@ -12,12 +12,12 @@ I reserve the right to switch around the order of these list items if I need/wan
 
 This list started on `Thursday, May 23, 2024` for future reference.
 ## To Do
-- add pressure gradient simulation
-- add pressure gradient plotting
+- Use panel method to simulate flow speed over airfoil, then
+- add lift simulation using Bernoulli's Law
+
 - add capability for changing speed of flow onto wing
 - add capability for changing angle of attack of wing
 - simulate moments on the wing due to pressure
-- add lift simulation using Bernoulli's Law
 
 ## Done
 - add scaling capability
