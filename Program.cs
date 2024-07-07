@@ -42,7 +42,7 @@ namespace StandaloneExample
 		{
 			Raylib.DrawRing(new Vector2(x, y), radius - thickness, radius, startAngle + 180, endAngle + 180, segments, Raylib.Fade(color, opacity));
 		}
-		public static void DrawCircle(float x, float y, float radius, Color color, float opacity, float startAngle = 0, float endAngle = 360, int segments = 6)
+		public static void DrawCircle(float x, float y, float radius, Color color, float opacity)
 		{
 			Raylib.DrawCircleV(new Vector2(x, y), radius, Raylib.Fade(color, opacity));
 
@@ -53,7 +53,7 @@ namespace StandaloneExample
 		}
 		public static float AirPressureAtAltitude(float celsius, float altitudeMeters)
 		{
-			const float g = 9.80665f;               // acceleration due to gravity, m/s^2
+			const float g = 9.80665f;               // acceleration due to gravity, m/s²
 			const float M = 0.0289644f;             // molar mass of Earth's air, kg/mol
 			const float R = 8.3144598f;             // universal gas constant, J/(mol*K)
 			float T0 = CelsiusToKelvin(celsius);    // standard temperature at sea level, K
@@ -142,6 +142,11 @@ namespace StandaloneExample
 			// using double datatype because i don't want to keep casting over and over again
 			double γ = 2 * freestreamVelocity * Math.Sin(angleofattack) * Math.Pow(chord / pointOnChord * -1, 1 / 2);
 			return (float)γ;
+		}
+		public static float normalLiftVelocity(float Γ, float x, float normal)
+		{
+			// w = −(Γ / 2π) * (x−xo)/(z−zo)²+(x−xo)²
+			float w = (Γ / (2 * Math.PI)) * (x - xo) / (normal - zo)²+(x - xo)²
 		}
 		public static void Main(string[] args)
 		{
