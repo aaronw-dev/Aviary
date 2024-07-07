@@ -131,6 +131,18 @@ namespace StandaloneExample
 			throw new NotImplementedException("This system has more dependencies than Next.js 😭");
 			//return (localPressure - staticAirPressure) / dynamicAirPressure;
 		}
+		public static float findCirculationAtPoint(float pointOnChord, float chord, float freestreamVelocity, float angleofattack)
+		{
+			// γ =2U sin α (c/x −1)^(1/2)
+			// where U is the freestream velocity
+			// and α is the angle of attack
+			// where c is the length of the chord
+			// and x is the position on the chord
+
+			// using double datatype because i don't want to keep casting over and over again
+			double γ = 2 * freestreamVelocity * Math.Sin(angleofattack) * Math.Pow(chord / pointOnChord * -1, 1 / 2);
+			return (float)γ;
+		}
 		public static void Main(string[] args)
 		{
 			string airfoilName = "";
@@ -171,12 +183,10 @@ namespace StandaloneExample
 
 			bool flipAirfoil = true;
 			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/fauvel.dat", ref airfoilName, true);
-			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, flipAirfoil);
-			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/hause.dat", ref airfoilName, flipAirfoil);
-			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, flipAirfoil);
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, true);
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/hause.dat", ref airfoilName, false);
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, true);
 			Console.WriteLine("Current airfoil: " + airfoilName);
-
-
 
 			int triangleSize = 50;
 
@@ -238,6 +248,7 @@ namespace StandaloneExample
 						airfoilScale / 2,
 						0
 					);
+
 				Raylib.DrawLineEx(
 					chordStart,
 					chordEnd,
@@ -245,6 +256,19 @@ namespace StandaloneExample
 					new Color(100, 150, 255, 255)
 				);
 				int scale = 5;
+
+				if (drawDebug)
+				{
+					Vector2 chordNormal = perp(normal(chordStart, chordEnd) * 40, false);
+					Vector2 chordAverage = averageVector(chordStart, chordEnd);
+					Raylib.DrawLineEx(
+						chordAverage,
+						chordAverage + chordNormal * scale,
+						3,
+						Raylib.ORANGE
+					);
+				}
+
 				for (int i = 0; i < currentAirfoil.Count; i++)
 				{
 					Vector2 currentPoint = currentAirfoil[i];
@@ -272,7 +296,7 @@ namespace StandaloneExample
 					{
 						Vector2 faceStart = new Vector2(lastPointScaled.X, lastPointScaled.Y);
 						Vector2 faceEnd = new Vector2(curPointScaled.X, curPointScaled.Y);
-						DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED, 1f);
+						DrawCircle(faceStart.X, faceStart.Y, 4, Raylib.RED, 1f);
 						//Raylib.DrawRing(new Vector2((int)faceStart.X, (int)faceStart.Y), 9, 10, 180, 0, 128, Raylib.Fade(Raylib.MAROON, 1f));
 						DrawRing(faceStart.X, faceStart.Y, 10, 2, Raylib.PURPLE, 0.5f, segments: 64);
 						//bool toReverseNormal = curPointScaled.Y < 0;
@@ -292,17 +316,6 @@ namespace StandaloneExample
 				wingBottomArea = wingBottomLength * wingWidth;
 				wingArea = wingTopArea + wingBottomArea;
 
-				if (drawDebug)
-				{
-					Vector2 chordNormal = perp(normal(chordStart, chordEnd) * 40, false);
-					Vector2 chordAverage = averageVector(chordStart, chordEnd);
-					Raylib.DrawLineEx(
-						chordAverage,
-						chordAverage + chordNormal * scale,
-						3,
-						Raylib.ORANGE
-					);
-				}
 				if (Raylib.IsKeyPressed(KeyboardKey.KEY_UP))
 				{
 					airSpeed++;
