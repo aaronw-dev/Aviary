@@ -109,7 +109,7 @@ namespace StandaloneExample
 			//We use the formula CL = 2π sin α
 			return 2 * MathF.PI * MathF.Sin(AoA);
 		}
-		public static float coefficientOfPressure(float localPressure, float staticAirPressure, float dynamicAirPressure)
+		public static float coefficientOfPressure(float staticAirPressure, float dynamicAirPressure)
 		{
 			/*
 			We use this formula:
@@ -119,7 +119,8 @@ namespace StandaloneExample
 			*/
 			// To get the value [p], we must use Bernoulli's law, which requires local flow velocity, which requires using the panel method. 
 			// This system has more dependencies than Next.js 😭
-			return (localPressure - staticAirPressure) / dynamicAirPressure;
+			throw new NotImplementedException("This system has more dependencies than Next.js 😭");
+			//return (localPressure - staticAirPressure) / dynamicAirPressure;
 		}
 		public static void Main(string[] args)
 		{
@@ -263,7 +264,7 @@ namespace StandaloneExample
 						Vector2 faceStart = new Vector2(lastPointScaled.X, lastPointScaled.Y);
 						Vector2 faceEnd = new Vector2(curPointScaled.X, curPointScaled.Y);
 						Raylib.DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED);
-						Raylib.DrawCircle((int)faceEnd.X, (int)faceEnd.Y, 4, Raylib.RED);
+						Raylib.DrawRing(new Vector2((int)faceStart.X, (int)faceStart.Y), 9, 10, 180, 0, 128, Raylib.Fade(Raylib.MAROON, 1f));
 						//bool toReverseNormal = curPointScaled.Y < 0;
 						Vector2 normalizedFace = perp(normal(faceStart, faceEnd) * 10, flipAirfoil);
 						Vector2 averageFace = averageVector(faceStart, faceEnd);
