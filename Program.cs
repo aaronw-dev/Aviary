@@ -104,22 +104,31 @@ namespace StandaloneExample
 			a.Y /= m;
 			return a;
 		}
+		public static float coefficientOfLift(float AoA)
+		{
+			//We use the formula CL = 2π sin α
+			return 2 * MathF.PI * MathF.Sin(AoA);
+		}
+		public static float coefficientOfPressure(float localPressure, float staticAirPressure, float dynamicAirPressure)
+		{
+			/*
+			We use this formula:
+			 	 p − p∞
+			Cp = ______
+				   q∞
+			*/
+			// To get the value [p], we must use Bernoulli's law, which requires local flow velocity, which requires using the panel method. 
+			// This system has more dependencies than Next.js 😭
+			return (localPressure - staticAirPressure) / dynamicAirPressure;
+		}
 		public static void Main(string[] args)
 		{
 			string airfoilName = "";
 
-			int zoom = 800;
-
-			int airfoilScale = 1;
-
-			int xOffset = 0;
-			int yOffset = 0;
+			int airfoilScale = 800;
 
 			int windowWidth = 1280;
 			int windowHeight = 720;
-
-			int homeX;
-			int homeY;
 
 			float airSpeed = 0;
 			float wingWidth = 6;
@@ -137,19 +146,27 @@ namespace StandaloneExample
 			float airDensity;
 			float dynamicAirPressure;
 
-			float simTime = 0;
-			Vector3 drag;
-			Vector3 lift;
+			int simTime = 0;
+			//Vector3 drag;
+			//Vector3 lift;
 
-			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
-			Raylib.SetTargetFPS(120);
+
+			Camera2D camera;
+			camera.target = Vector2.Zero;
+			camera.offset = new Vector2(windowWidth / 2.0f, windowHeight / 2.0f);
+			camera.rotation = 0.0f;
+			camera.zoom = 1.0f;
+			bool drawDebug = false;
+
 
 			bool flipAirfoil = true;
-			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/fauvel.dat", ref airfoilName,flipAirfoil);
-			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, flipAirfoil);
+			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/fauvel.dat", ref airfoilName, true);
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, flipAirfoil);
 			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/hause.dat", ref airfoilName, flipAirfoil);
 			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, flipAirfoil);
 			Console.WriteLine("Current airfoil: " + airfoilName);
+
+
 
 			int triangleSize = 50;
 
@@ -157,14 +174,14 @@ namespace StandaloneExample
 
 			int gridSizeX = 25;
 			int gridSizeY = 25;
+
+			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
+			Raylib.SetTargetFPS(120);
+
 			while (!Raylib.WindowShouldClose())
 			{
 				wingTopLength = 0;
 				wingBottomLength = 0;
-
-				float scale = zoom / 140f;
-				homeX = windowWidth / 2 + xOffset;
-				homeY = windowHeight / 2 + yOffset;
 
 				staticAirPressure = AirPressureAtAltitude(airTemperature, altitude);
 				airDensity = AirDensity(airTemperature, staticAirPressure);
@@ -172,22 +189,44 @@ namespace StandaloneExample
 
 				Raylib.BeginDrawing();
 				Raylib.ClearBackground(new Color(2, 2, 2, 255));
-				Raylib.DrawTriangle(
-					new Vector2(windowWidth - triangleSize, windowHeight),
-					new Vector2(windowWidth, windowHeight),
-					new Vector2(windowWidth, windowHeight - triangleSize),
-					new Color(255, 150, 100, 255)
-				);
-				Raylib.DrawText("Current airfoil: " + airfoilName, 150, 10, 20, Raylib.RED);
+				Raylib.BeginMode2D(camera);
+				#region Draw Grid
+				//Initialize values
+				int brightness = 25;
+				float placeholderScale = 1;
+				float scaledWindowXMin = camera.target.X - windowWidth / 2 / camera.zoom;
+				float scaledWindowXMax = camera.target.X + windowWidth / 2 / camera.zoom;
+				float correctedGridOffsetX = scaledWindowXMin % gridSizeX;
+
+				float scaledWindowYMin = camera.target.Y - windowHeight / 2 / camera.zoom;
+				float scaledWindowYMax = camera.target.Y + windowHeight / 2 / camera.zoom;
+				float correctedGridOffsetY = scaledWindowYMin % gridSizeY;
+
+				#region Vertical Lines
+				for (float xPosition = scaledWindowXMin - correctedGridOffsetX; xPosition < scaledWindowXMax; xPosition += gridSizeX * placeholderScale)
+				{
+					Raylib.DrawLine((int)xPosition, (int)scaledWindowYMin, (int)xPosition, (int)scaledWindowYMax, new Color(brightness, brightness, brightness, 255));
+				}
+				#endregion
+
+				#region Horizontal Lines
+				for (float yPosition = scaledWindowYMin - correctedGridOffsetY; yPosition < scaledWindowYMax; yPosition += gridSizeY * placeholderScale)
+				{
+					Raylib.DrawLine((int)scaledWindowXMin, (int)yPosition, (int)scaledWindowXMax, (int)yPosition, new Color(brightness, brightness, brightness, 255));
+				}
+				#endregion
+
+				#endregion
+
 				Vector2 lastPoint = currentAirfoil[0];
 
 				Vector2 chordStart = new Vector2(
-						windowWidth / 2 + xOffset - zoom / 2 * airfoilScale,
-						windowHeight / 2 + yOffset
+						-airfoilScale / 2,
+						0
 					);
 				Vector2 chordEnd = new Vector2(
-						windowWidth / 2 + xOffset + zoom / 2 * airfoilScale,
-						windowHeight / 2 + yOffset
+						airfoilScale / 2,
+						0
 					);
 				Raylib.DrawLineEx(
 					chordStart,
@@ -195,6 +234,7 @@ namespace StandaloneExample
 					3,
 					new Color(100, 150, 255, 255)
 				);
+				int scale = 5;
 				for (int i = 0; i < currentAirfoil.Count; i++)
 				{
 					Vector2 currentPoint = currentAirfoil[i];
@@ -204,24 +244,24 @@ namespace StandaloneExample
 					else
 						wingTopLength += distance(lastPoint * airfoilScale, currentPoint * airfoilScale);
 
-					Vector2 lastPointScaled = lastPoint * airfoilScale * zoom;
-					Vector2 curPointScaled = currentPoint * airfoilScale * zoom;
+					Vector2 lastPointScaled = lastPoint * airfoilScale;
+					Vector2 curPointScaled = currentPoint * airfoilScale;
 					Raylib.DrawLineEx(
 						new Vector2(
-							homeX + lastPointScaled.X,
-							homeY + lastPointScaled.Y
+							lastPointScaled.X,
+							lastPointScaled.Y
 						),
 						new Vector2(
-							homeX + curPointScaled.X,
-							homeY + curPointScaled.Y
+							curPointScaled.X,
+							curPointScaled.Y
 						),
 						3,
 						Raylib.GREEN
 					);
-					if (Raylib.IsKeyDown(KeyboardKey.KEY_SPACE))
+					if (drawDebug)
 					{
-						Vector2 faceStart = new Vector2(homeX + lastPointScaled.X, homeY + lastPointScaled.Y);
-						Vector2 faceEnd = new Vector2(homeX + curPointScaled.X, homeY + curPointScaled.Y);
+						Vector2 faceStart = new Vector2(lastPointScaled.X, lastPointScaled.Y);
+						Vector2 faceEnd = new Vector2(curPointScaled.X, curPointScaled.Y);
 						Raylib.DrawCircle((int)faceStart.X, (int)faceStart.Y, 4, Raylib.RED);
 						Raylib.DrawCircle((int)faceEnd.X, (int)faceEnd.Y, 4, Raylib.RED);
 						//bool toReverseNormal = curPointScaled.Y < 0;
@@ -241,9 +281,9 @@ namespace StandaloneExample
 				wingBottomArea = wingBottomLength * wingWidth;
 				wingArea = wingTopArea + wingBottomArea;
 
-				if (Raylib.IsKeyDown(KeyboardKey.KEY_SPACE))
+				if (drawDebug)
 				{
-					Vector2 chordNormal = perp(normal(chordStart, chordEnd) * 100, false);
+					Vector2 chordNormal = perp(normal(chordStart, chordEnd) * 40, false);
 					Vector2 chordAverage = averageVector(chordStart, chordEnd);
 					Raylib.DrawLineEx(
 						chordAverage,
@@ -260,47 +300,54 @@ namespace StandaloneExample
 				{
 					airSpeed--;
 				}
+
+				if (Raylib.IsKeyPressed(KeyboardKey.KEY_SPACE))
+				{
+					drawDebug = !drawDebug;
+				}
+				Raylib.EndMode2D();
+
 				Raylib.DrawFPS(10, 10);
+
+				Raylib.DrawText("Current airfoil: " + airfoilName, 150, 10, 20, Raylib.RED);
+				Raylib.DrawTriangle(
+					new Vector2(windowWidth - triangleSize, windowHeight),
+					new Vector2(windowWidth, windowHeight),
+					new Vector2(windowWidth, windowHeight - triangleSize),
+					new Color(255, 150, 100, 255)
+				);
+
 				List<string> stats = new List<string>
 				{
-					"Simulation time (ms): " + MathF.Round(simTime),
-					"Airspeed (m/s): " + airSpeed,
-					"Static air pressure (Pa): " + staticAirPressure,
-					"Air Density (kg/m³): " + airDensity,
-					"Dynamic air pressure (Pa): " + dynamicAirPressure,
-					"Wing width (m): " + wingWidth,
-					"Wing top length (m): " + wingTopLength,
-					"Wing bottom length (m): " + wingBottomLength,
-					"Wing top area (m²): " + wingTopArea,
-					"Wing bottom area (m²): " + wingBottomArea,
-					"Wing total area (m²): " + wingArea
+					$"Simulation time (ms): {MathF.Round(simTime)}",
+					//$"Camera Offset (Vector2): {camera.offset}",
+					//$"Camera Position (Vector2): {camera.target}",
+					$"Grid movement (float): {correctedGridOffsetX}",
+					$"Camera Zoom (float): {camera.zoom}",
+					$"Airspeed (m/s): {airSpeed}",
+					$"Static air pressure (Pa): {staticAirPressure}",
+					$"Air Density (kg/m³): {airDensity}",
+					$"Dynamic air pressure (Pa): {dynamicAirPressure}",
+					$"Wing width (m): {wingWidth}",
+					$"Wing top length (m): {wingTopLength}",
+					$"Wing bottom length (m): {wingBottomLength}",
+					$"Wing top area (m²): {wingTopArea}",
+					$"Wing bottom area (m²): {wingBottomArea}",
+					$"Wing total area (m²): {wingArea}"
 				};
 				for (int i = 0; i < stats.Count; i++)
 				{
 					Raylib.DrawText(stats[i], 10, (i * 20) + 40, 20, Raylib.YELLOW);
 				}
-				//Raylib.DrawCircle((int)Raylib.GetMousePosition().X, (int)Raylib.GetMousePosition().Y, 10, Raylib.BROWN);
-				zoom += (int)Raylib.GetMouseWheelMoveV().Y * 50;
-				zoom = Math.Clamp(zoom, 150, 3000);
+
+				camera.zoom += (float)Raylib.GetMouseWheelMove() * 0.1f;
+				camera.zoom = Math.Clamp(camera.zoom, 0.1f, 10f);
 				if (Raylib.IsMouseButtonDown(MouseButton.MOUSE_BUTTON_LEFT))
 				{
-					Vector2 mouseDelta = Raylib.GetMouseDelta();
-					xOffset += (int)mouseDelta.X;
-					yOffset += (int)mouseDelta.Y;
+					camera.target -= Raylib.GetMouseDelta() / camera.zoom;
 				}
 				Raylib.EndDrawing();
-				simTime += Raylib.GetFrameTime() * 1000;
-
-				int brightness = 25;
-				float placeholderScale = 1;
-				for (float xPosition = xOffset % (gridSizeX * placeholderScale); xPosition < windowWidth; xPosition += gridSizeX * placeholderScale)
-				{
-					Raylib.DrawLine((int)xPosition, 0, (int)xPosition, windowHeight, new Color(brightness, brightness, brightness, 255));
-				}
-				for (float yPosition = yOffset % (gridSizeY * placeholderScale); yPosition < windowWidth; yPosition += gridSizeY * placeholderScale)
-				{
-					Raylib.DrawLine(0, (int)yPosition, windowWidth, (int)yPosition, new Color(brightness, brightness, brightness, 255));
-				}
+				simTime += (int)(Raylib.GetFrameTime() * 1000);
 			}
 			Raylib.CloseWindow();
 		}
