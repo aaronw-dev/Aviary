@@ -298,7 +298,9 @@ namespace StandaloneExample
 
 					float chordLength = Vector2.Distance(lastPointScaled, curPointScaled);
 					float angleofattack = angle(lastPointScaled, curPointScaled);
-					float panelCirculation = findCirculationAtPoint(chordLength / 2, chordLength, airSpeed, angleofattack);
+					float Γ = findCirculationAtPoint(chordLength / 2, chordLength, airSpeed, angleofattack);
+					//We next insert Eqn. (6.4) for w, with zo=0 and x0=c/4.
+					float vortexvelocity = vortexVelocity(Γ, chordLength / 4, 0, chordLength);
 					Raylib.DrawLineEx(
 						new Vector2(
 							lastPointScaled.X,
@@ -313,8 +315,8 @@ namespace StandaloneExample
 					);
 					if (drawDebug)
 					{
-						Vector2 faceStart = new Vector2(lastPointScaled.X, lastPointScaled.Y);
-						Vector2 faceEnd = new Vector2(curPointScaled.X, curPointScaled.Y);
+						Vector2 faceStart = lastPointScaled;
+						Vector2 faceEnd = curPointScaled;
 						DrawCircle(faceStart.X, faceStart.Y, 4, Raylib.RED, 1f);
 						//Raylib.DrawRing(new Vector2((int)faceStart.X, (int)faceStart.Y), 9, 10, 180, 0, 128, Raylib.Fade(Raylib.MAROON, 1f));
 						DrawRing(faceStart.X, faceStart.Y, 10, 2, Raylib.PURPLE, 0.5f, segments: 64);
