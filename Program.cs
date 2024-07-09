@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics;
+using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Raylib_CsLo;
@@ -38,10 +39,15 @@ namespace StandaloneExample
 			}
 			return points;
 		}
-		public static float ConvertDegreesToRadians(float degrees)
+		public static float Deg2Rad(float degrees)
 		{
 			double radians = Math.PI / 180 * degrees;
 			return (float)radians;
+		}
+		public static float Rad2Deg(float radians)
+		{
+			double degrees = (180 / Math.PI) * radians;
+			return (float)degrees;
 		}
 		public static void DrawRing(float x, float y, float radius, float thickness, Color color, float opacity, float startAngle = 0, float endAngle = 360, int segments = 6)
 		{
@@ -104,7 +110,7 @@ namespace StandaloneExample
 		}
 		public static float angle(Vector2 v1, Vector2 v2)
 		{
-			double theta = Math.Acos(Vector2.Dot(v1, v2) / Vector2.Distance(v1, v2));
+			double theta = Math.Atan2(v2.Y - v1.Y, v2.X - v1.X);
 			return (float)theta;
 		}
 		public static Vector2 averageVector(Vector2 v1, Vector2 v2)
@@ -149,13 +155,17 @@ namespace StandaloneExample
 			double γ = 2 * freestreamVelocity * Math.Sin(angleofattack) * Math.Pow(chord / pointOnChord * -1, 1 / 2);
 			return (float)γ;
 		}
-		public static float vortexVelocity(float Γ, float x, float normal, float chordLength)
+		public static float vortexVelocity(float Γ, float x, float z, float chordLength)
 		{
 			// w = −(Γ / 2π) * (x−xo)/(z−zo)²+(x−xo)²
 			// xo and zo are where the vortices are placed along respective axes
 			float zo = 0;
 			float xo = chordLength / 4;
-			double w = Γ / (2 * Math.PI) * (x - xo) / Math.Pow(normal - zo, 2) + Math.Pow(x - xo, 2);
+			Console.WriteLine(z - zo);
+			// this section is okay:
+			//		  |||||||||||||||||||||||||||||
+			double w = Γ / (2 * Math.PI) * (x - xo) / Math.Pow(z - zo, 2) + Math.Pow(x - xo, 2);
+			//Console.WriteLine(w);
 			return (float)w;
 		}
 		public static void Main(string[] args)
@@ -167,7 +177,7 @@ namespace StandaloneExample
 			int windowWidth = 1280;
 			int windowHeight = 720;
 
-			float airSpeed = 0;
+			float airSpeed = 5;
 			float wingWidth = 6;
 			float wingTopArea;
 			float wingBottomArea;
@@ -211,7 +221,7 @@ namespace StandaloneExample
 			int gridSizeY = 25;
 
 			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
-			Raylib.SetTargetFPS(120);
+			Raylib.SetTargetFPS(10);
 
 			while (!Raylib.WindowShouldClose())
 			{
@@ -298,9 +308,16 @@ namespace StandaloneExample
 
 					float chordLength = Vector2.Distance(lastPointScaled, curPointScaled);
 					float angleofattack = angle(lastPointScaled, curPointScaled);
+					//Console.WriteLine("AoA: " + Rad2Deg(angleofattack) + "°");
 					float Γ = findCirculationAtPoint(chordLength / 2, chordLength, airSpeed, angleofattack);
 					//We next insert Eqn. (6.4) for w, with zo=0 and x0=c/4.
-					float vortexvelocity = vortexVelocity(Γ, chordLength / 4, 0, chordLength);
+					float vortexvelocity = vortexVelocity(Γ, chordLength / 2, 0, chordLength);
+					Vector2 vortexPosition = averageVector(lastPointScaled, curPointScaled);
+					if (drawDebug)
+					{
+						DrawRing(vortexPosition.X, vortexPosition.Y, 10, 2, Raylib.PURPLE, 0.5f, segments: 64);
+						Raylib.DrawText(vortexvelocity.ToString(), vortexPosition.X, vortexPosition.Y, 20, Raylib.WHITE);
+					}
 					Raylib.DrawLineEx(
 						new Vector2(
 							lastPointScaled.X,
@@ -319,7 +336,6 @@ namespace StandaloneExample
 						Vector2 faceEnd = curPointScaled;
 						DrawCircle(faceStart.X, faceStart.Y, 4, Raylib.RED, 1f);
 						//Raylib.DrawRing(new Vector2((int)faceStart.X, (int)faceStart.Y), 9, 10, 180, 0, 128, Raylib.Fade(Raylib.MAROON, 1f));
-						DrawRing(faceStart.X, faceStart.Y, 10, 2, Raylib.PURPLE, 0.5f, segments: 64);
 						//bool toReverseNormal = curPointScaled.Y < 0;
 						Vector2 normalizedFace = perp(normal(faceStart, faceEnd) * 10, flipAirfoil);
 						Vector2 averageFace = averageVector(faceStart, faceEnd);
