@@ -38,6 +38,11 @@ namespace StandaloneExample
 			}
 			return points;
 		}
+		public static float ConvertDegreesToRadians(float degrees)
+		{
+			double radians = Math.PI / 180 * degrees;
+			return (float)radians;
+		}
 		public static void DrawRing(float x, float y, float radius, float thickness, Color color, float opacity, float startAngle = 0, float endAngle = 360, int segments = 6)
 		{
 			Raylib.DrawRing(new Vector2(x, y), radius - thickness, radius, startAngle + 180, endAngle + 180, segments, Raylib.Fade(color, opacity));
@@ -97,9 +102,10 @@ namespace StandaloneExample
 			//Vector2 normal = new Vector2(dx, dy);
 			return normal;
 		}
-		public static float distance(Vector2 v1, Vector2 v2)
+		public static float angle(Vector2 v1, Vector2 v2)
 		{
-			return (float)Math.Sqrt(Math.Pow(v1.X + v2.X, 2) + Math.Pow(v1.Y + v2.Y, 2));
+			double theta = Math.Acos(Vector2.Dot(v1, v2) / Vector2.Distance(v1, v2));
+			return (float)theta;
 		}
 		public static Vector2 averageVector(Vector2 v1, Vector2 v2)
 		{
@@ -135,7 +141,7 @@ namespace StandaloneExample
 		{
 			// γ =2U sin α (c/x −1)^(1/2)
 			// where U is the freestream velocity
-			// and α is the angle of attack
+			// and α is the angle of attack (IN RADIANS!!!!)
 			// where c is the length of the chord
 			// and x is the position on the chord
 
@@ -143,10 +149,14 @@ namespace StandaloneExample
 			double γ = 2 * freestreamVelocity * Math.Sin(angleofattack) * Math.Pow(chord / pointOnChord * -1, 1 / 2);
 			return (float)γ;
 		}
-		public static float normalLiftVelocity(float Γ, float x, float normal)
+		public static float vortexVelocity(float Γ, float x, float normal, float chordLength)
 		{
 			// w = −(Γ / 2π) * (x−xo)/(z−zo)²+(x−xo)²
-			float w = (Γ / (2 * Math.PI)) * (x - xo) / (normal - zo)²+(x - xo)²
+			// xo and zo are where the vortices are placed along respective axes
+			float zo = 0;
+			float xo = chordLength / 4;
+			double w = Γ / (2 * Math.PI) * (x - xo) / Math.Pow(normal - zo, 2) + Math.Pow(x - xo, 2);
+			return (float)w;
 		}
 		public static void Main(string[] args)
 		{
@@ -279,12 +289,16 @@ namespace StandaloneExample
 					Vector2 currentPoint = currentAirfoil[i];
 					bool isOnBottom = currentPoint.Y < 0 || lastPoint.Y < 0;
 					if (isOnBottom)
-						wingBottomLength += distance(lastPoint * airfoilScale, currentPoint * airfoilScale);
+						wingBottomLength += Vector2.Distance(lastPoint * airfoilScale, currentPoint * airfoilScale);
 					else
-						wingTopLength += distance(lastPoint * airfoilScale, currentPoint * airfoilScale);
+						wingTopLength += Vector2.Distance(lastPoint * airfoilScale, currentPoint * airfoilScale);
 
 					Vector2 lastPointScaled = lastPoint * airfoilScale;
 					Vector2 curPointScaled = currentPoint * airfoilScale;
+
+					float chordLength = Vector2.Distance(lastPointScaled, curPointScaled);
+					float angleofattack = angle(lastPointScaled, curPointScaled);
+					float panelCirculation = findCirculationAtPoint(chordLength / 2, chordLength, airSpeed, angleofattack);
 					Raylib.DrawLineEx(
 						new Vector2(
 							lastPointScaled.X,
