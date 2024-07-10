@@ -7,17 +7,18 @@ Of course, this won't be a perfect app, since this app is built for me to be abl
 
 I originally made this app in HTML, CSS, and JS. You can find it at [awdev.codes/dev/aviary](https://awdev.codes/dev/aviary). I switched to using C# and Raylib because it is SOOOOOO much faster and using actual datatypes is so much better than the stupid JavaScript (web and without TypeScript) `var`, `let`, and `const` variable types. 
 
+Raylib is definitely the best tool I could have picked for the job, since it is very easy to hook into and can run at speeds of upu to 5000 FPS (in my testing). There is a whole built-in camera system, it's like a game engine without the bloat.
+
 # Actions
 I reserve the right to switch around the order of these list items if I need/want to.
 
 This list started on `Thursday, May 23, 2024` for future reference.
 ## To Do
-- Use panel method to simulate flow speed over airfoil, then
-- add lift simulation using Bernoulli's Law
-
-- add capability for changing speed of flow onto wing
 - add capability for changing angle of attack of wing
 - simulate moments on the wing due to pressure
 
 ## Done
+- add capability for changing speed of flow onto wing
+- Use panel method to simulate flow speed over airfoil, then
+- add lift simulation using Bernoulli's Law
 - add scaling capability
