@@ -161,12 +161,13 @@ namespace StandaloneExample
 			// xo and zo are where the vortices are placed along respective axes
 			float zo = 0;
 			float xo = chordLength / 4;
-			Console.WriteLine(z - zo);
+			//Console.WriteLine(Γ / (2 * Math.PI) * (x - xo));
+			//Console.WriteLine(Math.Pow(z - zo, 2) + Math.Pow(x - xo, 2));
 			// this section is okay:
 			//		  |||||||||||||||||||||||||||||
-			double w = Γ / (2 * Math.PI) * (x - xo) / Math.Pow(z - zo, 2) + Math.Pow(x - xo, 2);
+			float w = Γ / (2 * (float)Math.PI) * (x - xo) / ((float)Math.Pow(z - zo, 2) + (float)Math.Pow(x - xo, 2));
 			//Console.WriteLine(w);
-			return (float)w;
+			return w;
 		}
 		public static void Main(string[] args)
 		{
@@ -205,10 +206,11 @@ namespace StandaloneExample
 			camera.zoom = 1.0f;
 			bool drawDebug = false;
 
+			float angleofattack;
 
 			bool flipAirfoil = true;
-			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/fauvel.dat", ref airfoilName, true);
-			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, true);
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/fauvel.dat", ref airfoilName, true);
+			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, true);
 			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/hause.dat", ref airfoilName, false);
 			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, true);
 			Console.WriteLine("Current airfoil: " + airfoilName);
@@ -221,7 +223,7 @@ namespace StandaloneExample
 			int gridSizeY = 25;
 
 			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
-			Raylib.SetTargetFPS(10);
+			Raylib.SetTargetFPS(120);
 
 			while (!Raylib.WindowShouldClose())
 			{
@@ -307,17 +309,17 @@ namespace StandaloneExample
 					Vector2 curPointScaled = currentPoint * airfoilScale;
 
 					float chordLength = Vector2.Distance(lastPointScaled, curPointScaled);
-					float angleofattack = angle(lastPointScaled, curPointScaled);
-					//Console.WriteLine("AoA: " + Rad2Deg(angleofattack) + "°");
-					float Γ = findCirculationAtPoint(chordLength / 2, chordLength, airSpeed, angleofattack);
+					float panelangle = angle(lastPointScaled, curPointScaled);
+					//Console.WriteLine("AoA: " + Rad2Deg(panelangle) + "°");
+					float Γ = findCirculationAtPoint(chordLength / 2, chordLength, airSpeed, panelangle);
 					//We next insert Eqn. (6.4) for w, with zo=0 and x0=c/4.
 					float vortexvelocity = vortexVelocity(Γ, chordLength / 2, 0, chordLength);
 					Vector2 vortexPosition = averageVector(lastPointScaled, curPointScaled);
-					if (drawDebug)
+					/*if (drawDebug)
 					{
-						DrawRing(vortexPosition.X, vortexPosition.Y, 10, 2, Raylib.PURPLE, 0.5f, segments: 64);
+						DrawRing(vortexPosition.X, vortexPosition.Y, vortexvelocity * 100, 2, Raylib.PURPLE, 0.5f, segments: 64);
 						Raylib.DrawText(vortexvelocity.ToString(), vortexPosition.X, vortexPosition.Y, 20, Raylib.WHITE);
-					}
+					}*/
 					Raylib.DrawLineEx(
 						new Vector2(
 							lastPointScaled.X,
@@ -337,7 +339,7 @@ namespace StandaloneExample
 						DrawCircle(faceStart.X, faceStart.Y, 4, Raylib.RED, 1f);
 						//Raylib.DrawRing(new Vector2((int)faceStart.X, (int)faceStart.Y), 9, 10, 180, 0, 128, Raylib.Fade(Raylib.MAROON, 1f));
 						//bool toReverseNormal = curPointScaled.Y < 0;
-						Vector2 normalizedFace = perp(normal(faceStart, faceEnd) * 10, flipAirfoil);
+						Vector2 normalizedFace = perp(normal(faceStart, faceEnd) * (vortexvelocity * 100), flipAirfoil);
 						Vector2 averageFace = averageVector(faceStart, faceEnd);
 						Raylib.DrawLineEx(
 							averageFace,
