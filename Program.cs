@@ -3,7 +3,6 @@ using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using Raylib_CsLo;
-
 namespace StandaloneExample
 {
 	public static class Program
@@ -161,12 +160,9 @@ namespace StandaloneExample
 			// xo and zo are where the vortices are placed along respective axes
 			float zo = 0;
 			float xo = chordLength / 4;
-			//Console.WriteLine(Γ / (2 * Math.PI) * (x - xo));
-			//Console.WriteLine(Math.Pow(z - zo, 2) + Math.Pow(x - xo, 2));
 			// this section is okay:
 			//		  |||||||||||||||||||||||||||||
 			float w = Γ / (2 * (float)Math.PI) * (x - xo) / ((float)Math.Pow(z - zo, 2) + (float)Math.Pow(x - xo, 2));
-			//Console.WriteLine(w);
 			return w;
 		}
 		public static void Main(string[] args)
