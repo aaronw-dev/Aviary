@@ -203,7 +203,7 @@ namespace StandaloneExample
 			bool drawDebug = false;
 
 			float airSpeed = 2;
-			float angleofattack = 0;
+			float angleofattack = 14f;
 			Vector2 rotationOrigin = new Vector2(0, 0);
 
 			bool flipAirfoil = true;
@@ -222,6 +222,9 @@ namespace StandaloneExample
 
 			Raylib.InitWindow(windowWidth, windowHeight, "Aviary");
 			Raylib.SetTargetFPS(120);
+			Image windowIcon = Raylib.LoadImage("48.png");
+			Raylib.SetWindowIcon(windowIcon);
+			Raylib.UnloadImage(windowIcon);
 
 			while (!Raylib.WindowShouldClose())
 			{
@@ -383,12 +386,12 @@ namespace StandaloneExample
 				Raylib.DrawFPS(10, 10);
 
 				Raylib.DrawText("Current airfoil: " + airfoilName, 150, 10, 20, Raylib.RED);
-				Raylib.DrawTriangle(
+				/*Raylib.DrawTriangle(
 					new Vector2(windowWidth - triangleSize, windowHeight),
 					new Vector2(windowWidth, windowHeight),
 					new Vector2(windowWidth, windowHeight - triangleSize),
 					new Color(255, 150, 100, 255)
-				);
+				);*/
 
 				List<string> stats = new List<string>
 				{
