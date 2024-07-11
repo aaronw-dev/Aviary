@@ -105,8 +105,21 @@ namespace StandaloneExample
 			float dx = end.X - start.X;
 			float dy = end.Y - start.Y;
 			Vector2 normal = normalizeVector(new Vector2(-dx, dy * (flipNormal ? -1 : 1)));
-			//Vector2 normal = new Vector2(dx, dy);
 			return normal;
+		}
+		public static Vector2 rotate(Vector2 point, Vector2 origin, float theta)
+		{
+			theta = Deg2Rad(theta);
+			float tempX = point.X - origin.X;
+			float tempY = point.Y - origin.Y;
+
+			float rotatedX = tempX * MathF.Cos(theta) - tempY * MathF.Sin(theta);
+			float rotatedY = tempX * MathF.Sin(theta) + tempY * MathF.Cos(theta);
+
+			float finalX = rotatedX + origin.X;
+			float finalY = rotatedY + origin.Y;
+
+			return new Vector2(finalX, finalY);
 		}
 		public static float angle(Vector2 v1, Vector2 v2)
 		{
@@ -129,19 +142,6 @@ namespace StandaloneExample
 		{
 			//We use the formula CL = 2π sin α
 			return 2 * MathF.PI * MathF.Sin(AoA);
-		}
-		public static float coefficientOfPressure(float staticAirPressure, float dynamicAirPressure)
-		{
-			/*
-			We use this formula:
-			 	 p − p∞
-			Cp = ______
-				   q∞
-			*/
-			// To get the value [p], we must use Bernoulli's law, which requires local flow velocity, which requires using the panel method. 
-			// This system has more dependencies than Next.js 😭
-			throw new NotImplementedException("This system has more dependencies than Next.js 😭");
-			//return (localPressure - staticAirPressure) / dynamicAirPressure;
 		}
 		public static float findCirculationAtPoint(float pointOnChord, float chord, float freestreamVelocity, float angleofattack)
 		{
@@ -178,7 +178,6 @@ namespace StandaloneExample
 			int windowWidth = 1280;
 			int windowHeight = 720;
 
-			float airSpeed = 5;
 			float wingWidth = 6;
 			float wingTopArea;
 			float wingBottomArea;
@@ -189,6 +188,7 @@ namespace StandaloneExample
 
 			float airTemperature = 15;
 			float altitude = 500;
+			float rotationSpeed = 0.25f;
 
 			float staticAirPressure;
 			float airDensity;
@@ -206,13 +206,15 @@ namespace StandaloneExample
 			camera.zoom = 1.0f;
 			bool drawDebug = false;
 
-			float angleofattack;
+			float airSpeed = 2;
+			float angleofattack = 0;
+			Vector2 rotationOrigin = new Vector2(0, 0);
 
 			bool flipAirfoil = true;
 			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/fauvel.dat", ref airfoilName, true);
-			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, true);
+			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/n0009sm.dat", ref airfoilName, true);
 			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/hause.dat", ref airfoilName, false);
-			//List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, true);
+			List<Vector2> currentAirfoil = getAirfoil(filepath: "C:/Users/Aaron/Aviary/airfoils/stcyr171.dat", ref airfoilName, true);
 			Console.WriteLine("Current airfoil: " + airfoilName);
 
 			int triangleSize = 50;
@@ -265,7 +267,7 @@ namespace StandaloneExample
 
 				#endregion
 
-				Vector2 lastPoint = currentAirfoil[0];
+				Vector2 lastPoint = rotate(currentAirfoil[0], rotationOrigin, angleofattack);
 
 				Vector2 chordStart = new Vector2(
 						-airfoilScale / 2,
@@ -275,6 +277,9 @@ namespace StandaloneExample
 						airfoilScale / 2,
 						0
 					);
+
+				chordStart = rotate(chordStart, rotationOrigin, angleofattack);
+				chordEnd = rotate(chordEnd, rotationOrigin, angleofattack);
 
 				Raylib.DrawLineEx(
 					chordStart,
@@ -298,8 +303,8 @@ namespace StandaloneExample
 
 				for (int i = 0; i < currentAirfoil.Count; i++)
 				{
-					Vector2 currentPoint = currentAirfoil[i];
-					bool isOnBottom = currentPoint.Y < 0 || lastPoint.Y < 0;
+					Vector2 currentPoint = rotate(currentAirfoil[i], rotationOrigin, angleofattack);
+					bool isOnBottom = currentAirfoil[i].Y < 0 || currentAirfoil[i].Y < 0;
 					if (isOnBottom)
 						wingBottomLength += Vector2.Distance(lastPoint * airfoilScale, currentPoint * airfoilScale);
 					else
@@ -364,6 +369,15 @@ namespace StandaloneExample
 					airSpeed--;
 				}
 
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_RIGHT))
+				{
+					angleofattack += rotationSpeed;
+				}
+				if (Raylib.IsKeyDown(KeyboardKey.KEY_LEFT))
+				{
+					angleofattack -= rotationSpeed;
+				}
+
 				if (Raylib.IsKeyPressed(KeyboardKey.KEY_SPACE))
 				{
 					drawDebug = !drawDebug;
@@ -385,18 +399,19 @@ namespace StandaloneExample
 					$"Simulation time (ms): {MathF.Round(simTime)}",
 					//$"Camera Offset (Vector2): {camera.offset}",
 					//$"Camera Position (Vector2): {camera.target}",
-					$"Grid movement (float): {correctedGridOffsetX}",
-					$"Camera Zoom (float): {camera.zoom}",
+					//$"Grid movement (float): {correctedGridOffsetX}",
+					//$"Camera Zoom (float): {camera.zoom}",
 					$"Airspeed (m/s): {airSpeed}",
+					$"Angle of attack: (deg): {angleofattack}°",
 					$"Static air pressure (Pa): {staticAirPressure}",
 					$"Air Density (kg/m³): {airDensity}",
 					$"Dynamic air pressure (Pa): {dynamicAirPressure}",
-					$"Wing width (m): {wingWidth}",
-					$"Wing top length (m): {wingTopLength}",
-					$"Wing bottom length (m): {wingBottomLength}",
-					$"Wing top area (m²): {wingTopArea}",
-					$"Wing bottom area (m²): {wingBottomArea}",
-					$"Wing total area (m²): {wingArea}"
+					//$"Wing width (m): {wingWidth}",
+					//$"Wing top length (m): {wingTopLength}",
+					//$"Wing bottom length (m): {wingBottomLength}",
+					//$"Wing top area (m²): {wingTopArea}",
+					//$"Wing bottom area (m²): {wingBottomArea}",
+					//$"Wing total area (m²): {wingArea}"
 				};
 				for (int i = 0; i < stats.Count; i++)
 				{
